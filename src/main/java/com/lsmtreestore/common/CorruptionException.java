@@ -46,6 +46,37 @@ public class CorruptionException extends StoreException {
   }
 
   /**
+   * Creates a new {@code CorruptionException} wrapping an underlying cause — used when corruption
+   * is surfaced by a lower-level exception from binary-format parsing (e.g. {@code
+   * BufferUnderflowException} on a truncated varint, or a codec-library failure) rather than
+   * detected by a local comparison.
+   *
+   * @param message human-readable description of the corruption
+   * @param cause the underlying exception that signalled the corruption; may be {@code null}
+   */
+  public CorruptionException(String message, Throwable cause) {
+    super(message, cause);
+    this.path = null;
+    this.offset = UNKNOWN_OFFSET;
+  }
+
+  /**
+   * Creates a new {@code CorruptionException} wrapping an underlying cause at a specific file and
+   * offset. Combines full forensic context (path + offset) with the original exception's stack
+   * trace so callers parsing on-disk structures can chain failures without losing information.
+   *
+   * @param message human-readable description of the corruption
+   * @param path file where the corruption was detected; may be {@code null}
+   * @param offset byte offset into {@code path} where the corruption was detected
+   * @param cause the underlying exception that signalled the corruption; may be {@code null}
+   */
+  public CorruptionException(String message, Path path, long offset, Throwable cause) {
+    super(message, cause);
+    this.path = path;
+    this.offset = offset;
+  }
+
+  /**
    * Returns the file where corruption was detected, if known.
    *
    * @return the file path, or {@link Optional#empty()} if the caller did not supply one
